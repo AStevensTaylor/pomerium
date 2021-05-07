@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/pomerium/pomerium/internal/authclient"
@@ -38,7 +39,13 @@ func New(options ...Option) *Tunnel {
 // RunListener runs a network listener on the given address. For each
 // incoming connection a new TCP tunnel is established via Run.
 func (tun *Tunnel) RunListener(ctx context.Context, listenerAddress string) error {
-	li, err := net.Listen("tcp", listenerAddress)
+	var li net.Listener
+	var err error
+	if listenSchemeAndAddress := strings.Split(listenerAddress, "://"); len(listenSchemeAndAddress) == 2 {
+		li, err = net.Listen(listenSchemeAndAddress[0], listenSchemeAndAddress[1])
+	} else {
+		li, err = net.Listen("tcp", listenSchemeAndAddress[0])
+	}
 	if err != nil {
 		return err
 	}
